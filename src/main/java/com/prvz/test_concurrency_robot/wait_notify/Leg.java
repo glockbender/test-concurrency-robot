@@ -1,6 +1,7 @@
 package com.prvz.test_concurrency_robot.wait_notify;
 
 public class Leg implements Runnable {
+
     private static final Object monitor = new Object();
     static volatile Leg LAST_LEG;
     private final String name;
@@ -14,10 +15,12 @@ public class Leg implements Runnable {
 
     public void run() {
         try {
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 synchronized (monitor) {
                     monitor.notifyAll();
-                    while (LAST_LEG == this) monitor.wait();
+                    while (LAST_LEG == this) {
+                        monitor.wait();
+                    }
                     LAST_LEG = this;
                     System.out.println(name);
                     Thread.sleep(sleepInMillis);
@@ -25,6 +28,10 @@ public class Leg implements Runnable {
             }
         } catch (InterruptedException e) {
             System.err.println("INTERRUPTED. " + Thread.currentThread().toString());
+            Thread.currentThread().interrupt();
+            synchronized (monitor) {
+                monitor.notify();
+            }
         }
     }
 }
